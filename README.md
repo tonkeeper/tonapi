@@ -15,7 +15,7 @@ Authorization should be performed in 2 steps, redirect user to the auth page, an
 
 ## Serverside and clientside flows
 
-Tonapi can be used both for the client side flow as well as for server side flow. This means that apps wich doesnt have any backend can user tonapi authorization.
+Tonapi can be used for both the client side as well as the server side flow. Which means that apps that don't have any backend still can use the tonapi authorization.
 
 From code perspective there is not much of a difference, but its important to not use serverside token anywhere in client side, and at the same time to use clientside tokens only on client side.
 
