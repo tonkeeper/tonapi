@@ -1,11 +1,72 @@
 # Introduction
 
-tonapi.io is an API for [TON blockchain](https://ton.org) developed by [Tonkeeper](https://tonkeeper.com) team.
+**TonAPI.io** is an API for [TON blockchain](https://ton.org) developed by [Tonkeeper](https://tonkeeper.com) team.
 It allows to work with indexed blockchain information via API.
 
 You may also check [Tonkeeper documentation](https://github.com/tonkeeper/ton-connect) for iteractions with user and performing user requests with wallet.
 
 It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announcements) for annoucements.
+
+# Registering your API key
+At the moment you need special key to be able to use TonAPI, othervise you requests will be limited.
+
+To obtain special key wich we call **serverSideKey** or **clientSideKey** in this doc - you need to use telegram bot https://t.me/tonapi_bot
+
+Bot support two commands: **/get_server_key** and **/get_client_key**.
+
+Tonapi can be used both from client side as well as from server side. From code perspective there is not much of a difference, but its important to not use **serverSideKey** anywhere in client side, and at the same time to use **clientSideKey** only on client side. The reason for this is because client side key has additional limitations per IP, while serverside key can be banned in case of large amount of flood requests to the api, so its usage should be limited by the developer.
+
+# Performing API requests
+Once you have API key you can perform simple requests to the api.
+
+One of the basic methods is **/v1/blockchain/getAccount**
+
+So you can make an **GET** http request to the url
+```
+https://tonapi.io/v1/blockchain/getAccount?account=EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N
+```
+But as mentioned above there an **Authorization** header should be passed to access the method:
+```
+Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
+```
+Here is an **javascript** code example to perform such request:
+```javascript
+fetch("https://tonapi.io/v1/blockchain/getAccount?" + new URLSearchParams({
+    account: 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
+}), {
+    method: 'GET', 
+    headers: new Headers({
+        'Authorization': 'Bearer '+serverSideKey, 
+    }), 
+})
+```
+Also take a look at the same example but using **Go**:
+```go
+req, err := http.NewRequest("GET", "https://tonapi.io/v1/blockchain/getAccount", nil)
+if err != nil {
+    log.Println(err)
+    os.Exit(1)
+}
+
+q := req.URL.Query()
+q.Add("account", "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N")
+req.URL.RawQuery = q.Encode()
+
+req.Header.Add("Authorization", "Bearer "+serverSideKey)
+
+// Send req using http Client
+client := &http.Client{}
+resp, err := client.Do(req)
+if err != nil {
+    log.Println("Error on response.\n[ERROR] -", err)
+}
+defer resp.Body.Close()
+```
+
+# Using an SDK
+To make things simpler for developers we introduced an SDK: https://github.com/startfellows/tonapi-sdk-js
+
+Also since tonapi is build with **swagger** you can generate SDK for any language you perfer. Please use swaggerfile available on this URL: https://tonapi.io/swagger/swagger.json
 
 # Authorization
 
@@ -132,12 +193,11 @@ https://github.com/tonkeeper/ton-connect/blob/main/tonconnect-server/src/TonConn
 
 ## OAuth demo
 
-Simple auth demo using [tonapi.io](https://tonapi.io/), tonkeeper and oauth login flow with desktop and mobile support
+Check out simple demo of Authroisation flow:
+
 [View Demo](https://tonapi-oauth.herokuapp.com/)
-Before you looking this demo read the definition of oauth [login flow](https://www.techtarget.com/searchapparchitecture/definition/OAuth) and go oauth [implementation](https://github.com/go-oauth2/oauth2)
 
----
-
+***
 ```javascript
 Quick start guide:
 
