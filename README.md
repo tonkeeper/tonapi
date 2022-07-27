@@ -10,7 +10,7 @@ It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announ
 # Registering your API key
 At the moment you need special key to be able to use TonAPI, otherwise you requests will be limited.
 
-To obtain special key wich we call **serverSideKey** or **clientSideKey** in this doc - you need to use telegram bot https://t.me/tonapi_bot
+To obtain special key which we call **serverSideKey** or **clientSideKey** in this doc - you need to use telegram bot https://t.me/tonapi_bot
 
 Bot support two commands: **/get_server_key** and **/get_client_key**.
 
