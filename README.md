@@ -8,7 +8,7 @@ You may also check [Tonkeeper documentation](https://github.com/tonkeeper/ton-co
 It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announcements) for annoucements.
 
 # Registering your API key
-At the moment you need special key to be able to use TonAPI, othervise you requests will be limited.
+At the moment you need special key to be able to use TonAPI, otherwise you requests will be limited.
 
 To obtain special key wich we call **serverSideKey** or **clientSideKey** in this doc - you need to use telegram bot https://t.me/tonapi_bot
 
