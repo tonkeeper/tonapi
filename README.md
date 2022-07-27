@@ -5,7 +5,7 @@ It allows to work with indexed blockchain information via API.
 
 You may also check [Tonkeeper documentation](https://github.com/tonkeeper/ton-connect) for iteractions with user and performing user requests with wallet.
 
-It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announcements) for annoucements.
+It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announcements) for announcements.
 
 # Registering your API key
 At the moment you need special key to be able to use TonAPI, otherwise you requests will be limited.
