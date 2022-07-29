@@ -193,7 +193,7 @@ https://github.com/tonkeeper/ton-connect/blob/main/tonconnect-server/src/TonConn
 
 ## OAuth demo
 
-Check out simple demo of Authroisation flow:
+Check out simple demo of Authorization flow:
 
 [View Demo](https://tonapi-oauth.herokuapp.com/)
 
