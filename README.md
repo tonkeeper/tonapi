@@ -119,7 +119,7 @@ In case of success the **callback_url** or **redirect_url** will be triggered wi
 }
 ```
 
-### 2) Fetching persistant token via tonapi.io/v1/oauth/getToken method.
+### 2) Fetching persistent token via tonapi.io/v1/oauth/getToken method.
 
 After successfully obtaining **auth_token** via process described below /auth method should be called from server side to check that the **auth_token** is valid.
 
