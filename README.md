@@ -66,7 +66,7 @@ defer resp.Body.Close()
 # Using an SDK
 To make things simpler for developers we introduced an SDK: https://github.com/startfellows/tonapi-sdk-js
 
-Also since tonapi is build with **swagger** you can generate SDK for any language you perfer. Please use swaggerfile available on this URL: https://tonapi.io/swagger/swagger.json
+Also since tonapi is build with **swagger** you can generate SDK for any language you prefer. Please use swaggerfile available on this URL: https://tonapi.io/swagger/swagger.json
 
 # Authorization
 
