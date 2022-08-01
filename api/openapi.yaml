@@ -1,0 +1,1853 @@
+openapi: 3.0.1
+info:
+  title: REST api to TON blockchain explorer
+  version: 0.0.1
+  description: Provide access to indexed TON blockchain
+  contact:
+    name: Support
+    email: contact@fslabs.org
+servers:
+  - url: "https://tonapi.io"
+  - url: "https://testnet.tonapi.io"
+  - url: "http://localhost:8081"
+paths:
+  /v1/system/time:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get current time
+      operationId: currentTime
+      tags:
+        - System
+      responses:
+        '200':
+          description: Current time
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - time
+                properties:
+                  time:
+                    type: integer
+                    example: 1234567890
+  /v1/blockchain/getBlock:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get block by id
+      operationId: getBlockById
+      tags:
+        - RawBlockchain
+      parameters:
+        - name: block_id
+          in: query
+          required: true
+          description: block id
+          schema:
+            type: string
+            example: (-1,4234234,-23423523535345353454)
+      responses:
+        '200':
+          description: "block"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/blockchain/getAccount:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get raw account data
+      operationId: getAccount
+      tags:
+        - RawBlockchain
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "raw account data from blockchain"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/blockchain/getTransaction:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get transaction by hash
+      operationId: getTransaction
+      tags:
+        - RawBlockchain
+      parameters:
+        - name: hash
+          in: query
+          required: true
+          description: "transaction hash in hex (without 0x) or base64url format"
+          schema:
+            type: string
+            example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
+      responses:
+        '200':
+          description: "transaction"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/blockchain/getTransactions:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get transactions
+      operationId: getTransactions
+      tags:
+        - RawBlockchain
+      parameters:
+        - name: account
+          in: query
+          required: false
+          description: "address in raw (hex without 0x) or base64url format"
+          schema:
+            type: string
+            example: 0:BA60BFBD527C0CD2D70C6396630C50A498AF015B987ADAAD1D4A9E287F604536
+        - name: maxLt # not snake_case
+          in: query
+          description: "omit this parameter to get last transactions"
+          schema:
+            type: integer
+            format: int64
+            example: 25758317000002
+        - name: minLt # not snake_case
+          in: query
+          description: "omit this parameter to get last transactions"
+          schema:
+            type: integer
+            format: int64
+            example: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
+            maximum: 1000
+            default: 100
+            example: 100
+      responses:
+        '200':
+          description: "transactions"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/wallet/findByPubkey:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Find all wallets by public key
+      operationId: findWalletsByPubKey
+      tags:
+        - Wallet
+      parameters:
+        - name: public_key
+          in: query
+          required: true
+          description: "public key in hex (without 0x) format"
+          schema:
+            type: string
+            example: 55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122
+      responses:
+        '200':
+          description: "wallets"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallets'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/subscription/getByWallet:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all subscriptions by wallet address
+      operationId: getSubscriptionsByWallet
+      tags:
+        - Subscription
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "subscriptions"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscriptions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/trace/getAccountHistory:
+    get:
+      deprecated: true
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get traces for account
+      operationId: getTracesByAccount
+      tags:
+        - Trace
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
+            maximum: 1000
+            default: 100
+            example: 100
+      responses:
+        200:
+          description: "history"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Traces'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/trace/getTrace:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get the trace by trace ID or hash of any transaction in trace
+      operationId: getTrace
+      tags:
+        - Trace
+      parameters:
+        - name: hash
+          in: query
+          required: true
+          description: "trace ID or transaction hash in hex (without 0x) or base64url format"
+          schema:
+            type: string
+            example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
+      responses:
+        '200':
+          description: "trace"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceMsg'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/trace/getAnnotatedTrace:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get the annotated trace by trace ID or hash of any transaction in trace
+      operationId: getAnnotatedTrace
+      tags:
+        - Trace
+      parameters:
+        - name: hash
+          in: query
+          required: true
+          description: "trace ID or transaction hash in hex (without 0x) or base64url format"
+          schema:
+            type: string
+            example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
+      responses:
+        '200':
+          description: "annotated trace"
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getCollections:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all NFT collections
+      operationId: getNftCollections
+      tags:
+        - NFT
+      responses:
+        '200':
+          description: "nft collections"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftCollections'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getCollection:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get NFT collection by collection address
+      operationId: getNftCollection
+      tags:
+        - NFT
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft collection"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftCollection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getItemsByCollectionAddress:
+    get:
+      deprecated: true
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all NFT items from collection by collection address
+      operationId: getNftItemsByCollectionAddress
+      tags:
+        - NFT
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft items"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItems'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/searchItems:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Search NFT items using filters
+      operationId: searchNFTItems
+      tags:
+        - NFT
+      parameters:
+        - in: query
+          name: owner
+          required: false
+          description: "address in raw (hex without 0x) or base64url format or word 'no' for items without owner"
+          schema:
+            type: string
+            example: 0:BA60BFBD527C0CD2D70C6396630C50A498AF015B987ADAAD1D4A9E287F604536
+        - in: query
+          name: collection
+          required: false
+          description: "address in raw (hex without 0x) or base64url format or word 'no' for items without collection"
+          schema:
+            type: string
+            example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+        - in: query
+          name: include_on_sale
+          required: false
+          description: "include nft items which are currently are on market"
+          schema:
+            type: boolean
+            example: true
+            default: false
+        - in: query
+          name: limit
+          required: true
+          description: "maximum qty of items"
+          schema:
+            type: integer
+            example: 1000
+            maximum: 1000
+        - in: query
+          name: offset
+          required: true
+          description: "offset for pagination"
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: "nft items"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItemsRepr'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getItems:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get NFT items by addresses
+      operationId: getNFTItems
+      tags:
+        - NFT
+      parameters:
+        - in: query
+          name: addresses
+          required: true
+          explode: false
+          description: "NFT items addresses in raw (hex without 0x) or base64url format"
+          schema:
+            type: array
+            items:
+              type: string
+              example: "0:a0a659a32079f449edcd05fcdef8cc4d98f45557f25d66555fe2da1f47cb7d9a,0:702b27d8635f0a169c9a1abb341d95a2a5aad71e90d50271589e59290b6c7179"
+      responses:
+        '200':
+          description: "nft items"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItemsRepr'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getItemsByOwnerAddress:
+    get:
+      deprecated: true
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all NFT items by owner address
+      operationId: getNftItemsByOwnerAddress
+      tags:
+        - NFT
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft items"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItems'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getNftForSale:
+    get:
+      deprecated: true
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get NFT items for sale
+      operationId: getNftForSale
+      tags:
+        - NFT
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft sales"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftSalesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/nft/getItem:
+    get:
+      deprecated: true
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get NFT item by its address
+      operationId: getNftItemByAddress
+      tags:
+        - NFT
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft item"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/jetton/getBalances:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all Jettons balances by owner address
+      operationId: getJettonsBalances
+      tags:
+        - Jetton
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "jettons balances"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JettonsBalances'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/jetton/getInfo:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get jetton metadata by jetton master address
+      operationId: getJettonInfo
+      tags:
+        - Jetton
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "jetton info"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JettonInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/jetton/getHistory:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+#          todo: remove or stabilize
+      description: Get all Jetton transfers for account. EXPERIMENTAL METHOD!!!
+      operationId: getJettonHistory
+      tags:
+        - Jetton
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "history"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JettonHistory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/event/getAccountEvents:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get events for account
+      operationId: accountEvents
+      tags:
+        - Event
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+        - name: beforeLt # not snake_case
+          in: query
+          description: "omit this parameter to get last events"
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 25758317000002
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 1000
+            maximum: 1000
+      responses:
+        '200':
+          description: "events"
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - events
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/event/getEvent:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get the event by event ID or hash of any transaction in trace
+      operationId: getEvent
+      tags:
+        - Event
+      parameters:
+        - name: event_id
+          in: query
+          required: true
+          description: "event ID or transaction hash in hex (without 0x) or base64url format"
+          schema:
+            type: string
+            example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
+      responses:
+        '200':
+          description: "event"
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/send/boc:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Send message to blockchain
+      operationId: sendBoc
+      tags:
+        - Send
+      requestBody:
+        $ref: "#/components/requestBodies/Boc"
+      responses:
+        '200':
+          description: "success"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/account/getInfo:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get info about account
+      operationId: getAccountInfo
+      tags:
+        - Account
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "account info"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRepr'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/account/getBulkInfo:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get info about few accounts account by one request
+      operationId: getBulkAccountInfo
+      tags:
+        - Account
+      parameters:
+        - in: query
+          name: addresses
+          required: true
+          explode: false
+          description: "accounts addresses in raw (hex without 0x) or base64url format"
+          schema:
+            type: array
+            items:
+              type: string
+              example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf,0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+      responses:
+        '200':
+          description: "account info"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountReprs'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/send/estimateTx:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Estimate fees for message
+      operationId: estimateTx
+      tags:
+        - Send
+      requestBody:
+        $ref: "#/components/requestBodies/Boc"
+      responses:
+        '200':
+          description: "event"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    accountAddressParameter:
+      in: query
+      name: account
+      required: true
+      description: "address in raw (hex without 0x) or base64url format"
+      schema:
+        type: string
+        example: 0:BA60BFBD527C0CD2D70C6396630C50A498AF015B987ADAAD1D4A9E287F604536
+  requestBodies:
+    Boc:
+      description: "bag-of-cells serialized to base64"
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - boc
+            properties:
+              boc:
+                type: string
+                example: "a2Fza2RqZ2xrZHNqZ2xrZ2RzamFnbGtoc2Fka2poZ2pzaGQsamduc2pnbi5qYmZz"
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: error description
+    AccountAddress:
+      type: object
+      required:
+        - address
+        - is_scam
+      properties:
+        address:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+        name:
+          type: string
+          example: "Ton foundation"
+        is_scam:
+          type: boolean
+          example: true
+        icon:
+          type: string
+          example: "https://ton.org/logo.png"
+    Block:
+      type: object
+      required:
+        - seqno
+        - workchain_id
+        - root_hash
+        - file_hash
+        - shard
+        - start_lt
+        - end_lt
+      properties:
+        seqno:
+          type: integer
+          example: 21734019
+          format: int32
+        workchain_id:
+          type: integer
+          example: 0
+          format: int32
+        root_hash:
+          type: string
+          example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
+        file_hash:
+          type: string
+          example: A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB
+        shard:
+          type: integer
+          format: int64
+          example: -9223372036854775808
+        start_lt:
+          type: integer
+          format: int64
+          example: 23814011000000
+        end_lt:
+          type: integer
+          format: int64
+          example: 23814011000001
+    Account:
+      type: object
+      required:
+        - status
+        - balance
+      properties:
+        balance:
+          type: integer
+          format: int64
+          example: 123456789
+        code:
+          type: string
+          example: b5ee9c72410104010087000114ff00f4a413f4a0f2c80b0102012002030002d200dfa5ffff76a268698fe9ffe8e42c5267858f90e785ffe4f6aa6467c444ffb365ffc10802faf0807d014035e7a064b87d804077e7857fc10803dfd2407d014035e7a064b86467cd8903a32b9ba4410803ade68afd014035e7a045ea432b6363796103bb7b9363210c678b64b87d807d8040c249b3e4
+        data:
+          type: string
+          example: b5ee9c7241010101002600004811fd096c0000000000000000000000000000000000000000000000000000000000000000cb78264d
+        status:
+          type: string
+          example: active
+    AccountReprs:
+      type: object
+      required:
+        - accounts
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountRepr'
+    AccountRepr:
+      type: object
+      required:
+        - status
+        - interfaces
+        - balance
+        - address
+        - is_scam
+        - last_update
+        - memo_required
+      properties:
+        balance:
+          type: integer
+          format: int64
+          example: 123456789
+        status:
+          type: string
+          example: active
+        interfaces:
+          type: array
+          items:
+            type: string
+            example: nft_sale
+        address:
+          type: object
+          required:
+            - raw
+            - bounceable
+            - non_bounceable
+          properties:
+            raw:
+              type: string
+              example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+            bounceable:
+              type: string
+              example: "EQDaaxtmY6Dk0YzIV0zNnbUpbjZ92TJHBvO72esc0srwv8K2"
+            non_bounceable:
+              type: string
+              example: "UQDaaxtmY6Dk0YzIV0zNnbUpbjZ92TJHBvO72esc0srwv59z"
+        name:
+          type: string
+          example: "Ton foundation"
+        is_scam:
+          type: boolean
+          example: true
+        icon:
+          type: string
+          example: "https://ton.org/logo.png"
+        memo_required:
+          type: boolean
+          example: true
+        last_update:
+          type: integer
+          format: int64
+          example: 123456789
+    Wallet:
+      type: object
+      required:
+        - address
+        - status
+        - balance
+        - interfaces
+      properties:
+        address:
+          type: string
+          example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+        status:
+          type: string
+          example: active
+        balance:
+          type: integer
+          format: int64
+          example: 123456789
+        interfaces:
+          type: array
+          items:
+            type: string
+            example: wallet_v4R2
+    Wallets:
+      type: object
+      required:
+        - wallets
+      properties:
+        wallets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+    Subscription:
+      type: object
+      required:
+        - address
+        - wallet_address
+        - beneficiary_address
+        - amount
+        - period
+        - start_time
+        - timeout
+        - last_payment_time
+        - last_request_time
+        - subscription_id
+        - failed_attempts
+      properties:
+        address:
+          type: string
+          example: 0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee
+        wallet_address:
+          type: string
+          example: 0:567DE86AF2B6A557D7085807CF7C26338124987A5179344F0D0FA2657EB710F1
+        beneficiary_address:
+          type: string
+          example: 0:c704dadfabac88eab58e340de03080df81ff76636431f48624ad6e26fb2da0a4
+        amount:
+          type: integer
+          format: int64
+          example: 1000000000
+        period:
+          type: integer
+          format: int64
+          example: 2592000
+        start_time:
+          type: integer
+          format: int64
+          example: 1653996832
+        timeout:
+          type: integer
+          format: int64
+          example: 10800
+        last_payment_time:
+          type: integer
+          format: int64
+          example: 1653996834
+        last_request_time:
+          type: integer
+          format: int64
+          example: 0
+        subscription_id:
+          type: integer
+          format: int64
+          example: 217477
+        failed_attempts:
+          type: integer
+          format: int32
+          example: 0
+    Subscriptions:
+      type: object
+      required:
+        - subscriptions
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subscription'
+    Transaction:
+      type: object
+      required:
+        - hash
+        - fee
+        - storage_fee
+        - other_fee
+        - lt
+        - utime
+        - account
+        - data
+        - out_msgs
+      properties:
+        hash:
+          type: string
+          example: "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122"
+        fee:
+          type: integer
+          format: int64
+          example: 5681002
+        storage_fee:
+          type: integer
+          format: int64
+          example: 2
+        other_fee:
+          type: integer
+          format: int64
+          example: 5681000
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        utime:
+          type: integer
+          format: int64
+          example: 1645544908
+        account:
+          $ref: '#/components/schemas/AccountAddress'
+        data:
+          type: string
+          example: B5EE9C7241020A010002850003B5710C1073837B93FDAAD594284CE8B8EFF7B9CF25427440
+        in_msg:
+          $ref: '#/components/schemas/Message'
+        out_msgs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    Transactions:
+      type: object
+      required:
+        - transactions
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    Message:
+      type: object
+      required:
+        - fwd_fee
+        - ihr_fee
+        - created_lt
+        - value
+        - msg_data
+      properties:
+        fwd_fee:
+          type: integer
+          format: int64
+          example: 5681002
+        ihr_fee:
+          type: integer
+          format: int64
+          example: 5681002
+        created_lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        value:
+          type: integer
+          format: int64
+          example: 60000000
+        destination:
+          $ref: '#/components/schemas/AccountAddress'
+        source:
+          $ref: '#/components/schemas/AccountAddress'
+        msg_data:
+          example: {}
+    Trace:
+      type: object
+      required:
+        - id
+        - utime
+      properties:
+        id:
+          type: string
+          example: 55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122
+        utime:
+          type: integer
+          format: int64
+          example: 1645544908
+    Traces:
+      type: object
+      required:
+        - traces
+      properties:
+        traces:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trace'
+    TxAnnotation:
+      type: object
+      required:
+        - name
+        - data
+        - address
+      properties:
+        name:
+          type: string
+          example: nft_transfer
+        data:
+          description: annotation data struct
+          example: {}
+        address:
+          $ref: '#/components/schemas/AccountAddress'
+
+    TraceMsg:
+      type: object
+      required:
+        - fwd_fee
+        - ihr_fee
+        - created_lt
+        - value
+        - destination
+        - source
+      properties:
+        fwd_fee:
+          type: integer
+          format: int64
+          example: 5681002
+        ihr_fee:
+          type: integer
+          format: int64
+          example: 5681002
+        created_lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        value:
+          type: integer
+          format: int64
+          example: 60000000
+        destination:
+          $ref: '#/components/schemas/AccountAddress'
+        source:
+          $ref: '#/components/schemas/AccountAddress'
+        comment:
+          type: string
+          example: "Hi! This is your salary. \nFrom accounting with love."
+        tx:
+          $ref: '#/components/schemas/TraceTX'
+    TraceTX:
+      type: object
+      required:
+        - out_msgs
+        - hash
+        - fee
+        - storage_fee
+        - other_fee
+        - lt
+        - utime
+        - block_id
+        - annotations
+      properties:
+        out_msgs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraceMsg'
+        hash:
+          type: string
+          example: "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122"
+        fee:
+          type: integer
+          format: int64
+          example: 5681002
+        storage_fee:
+          type: integer
+          format: int64
+          example: 2
+        other_fee:
+          type: integer
+          format: int64
+          example: 5681000
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        utime:
+          type: integer
+          format: int64
+          example: 1645544908
+        block_id:
+          type: string
+          example: (-1,4234234,-23423523535345353454)
+        annotations:
+          type: array
+          items:
+            $ref: '#/components/schemas/TxAnnotation'
+    NftCollection:
+      type: object
+      required:
+        - address
+        - next_item_index
+        - raw_collection_content
+      properties:
+        address:
+          type: string
+          example: 0:FD595F36B4C1535BEC8461490D38EBB9AE3C38DD6ACE17CA63ABE2C6608BE159
+        next_item_index:
+          type: integer
+          format: int64
+          example: 1
+        owner:
+          $ref: '#/components/schemas/AccountAddress'
+        raw_collection_content:
+          type: string
+          example: 697066733a2f2f516d596e437861746f5178433571584b79773971656768415853626f3544644e6a32387631487669437a47355359
+        metadata:
+          example: {}
+    NftCollections:
+      type: object
+      required:
+        - nft_collections
+      properties:
+        nft_collections:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftCollection'
+    NftItem:
+      type: object
+      required:
+        - address
+        - index
+        - init
+        - raw_individual_content
+        - verified
+      properties:
+        address:
+          type: string
+          example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+        index:
+          type: integer
+          format: int64
+          example: 58
+        owner:
+          $ref: '#/components/schemas/AccountAddress'
+        collection_address:
+          type: string
+          example: 0:4EE035F09C23A15F2AA3ACC58D13FD27B9A0ED265238B654DEF38F851F0A291F
+        init:
+          type: boolean
+          example: true
+        raw_individual_content:
+          type: string
+          example: 35382E6A736F6E
+        verified:
+          type: boolean
+          example: true
+        metadata:
+          example: {}
+    NftItemRepr:
+      type: object
+      required:
+        - address
+        - index
+        - verified
+      properties:
+        address:
+          type: string
+          example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+        index:
+          type: integer
+          format: int64
+          example: 58
+        owner:
+          $ref: '#/components/schemas/AccountAddress'
+        collection_address:
+          type: string
+          example: 0:4EE035F09C23A15F2AA3ACC58D13FD27B9A0ED265238B654DEF38F851F0A291F
+        verified:
+          type: boolean
+          example: true
+        metadata:
+          example: {}
+        sale:
+          $ref: '#/components/schemas/Sale'
+        previews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImagePreview'
+    NftItems:
+      type: object
+      required:
+        - nft_items
+      properties:
+        nft_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftItem'
+    NftItemsRepr:
+      type: object
+      required:
+        - nft_items
+      properties:
+        nft_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftItemRepr'
+    ImagePreview:
+      type: object
+      required:
+        - resolution
+        - url
+      properties:
+        resolution:
+          type: string
+          example: "100x100"
+        url:
+          type: string
+          example: "https://site.com/pic1.jpg"
+    Sale:
+      type: object
+      required:
+        - address
+        - market
+        - price
+      properties:
+        address:
+          type: string
+          example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+        market:
+          $ref: '#/components/schemas/AccountAddress'
+        owner:
+          $ref: '#/components/schemas/AccountAddress'
+        price:
+          $ref: '#/components/schemas/Price'
+    Price:
+      type: object
+      required:
+        - value
+        - token_name
+      properties:
+        value:
+          type: string
+          example: "123000000000"
+        token_name:
+          type: string
+          example: "TON"
+    NftForSale:
+      type: object
+      required:
+        - sale
+        - sale_contract
+        - nft
+      properties:
+        sale:
+          $ref: '#/components/schemas/Sale'
+        sale_contract:
+          type: string
+          description: deprecated
+          example: deprecated
+        nft:
+          $ref: '#/components/schemas/NftItem'
+    NftSalesResponse:
+      type: object
+      properties:
+        getgems:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftForSale'
+        disintar:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftForSale'
+        other:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftForSale'
+    JettonBalance:
+      type: object
+      required:
+        - balance
+        - jetton_address
+        - wallet_address
+      properties:
+        balance:
+          type: string
+          example: 597968399
+        jetton_address:
+          type: string
+          example: 0:6553FB4A2128297A978C153F6DDF14C37A2566A36E5D5BFE2F50E97A8C877F04
+        wallet_address:
+          $ref: '#/components/schemas/AccountAddress'
+        metadata:
+          type: object
+          example: {}
+    JettonsBalances:
+      type: object
+      required:
+        - balances
+      properties:
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/JettonBalance'
+    JettonInfo:
+      type: object
+      required:
+        - mintable
+        - total_supply
+        - metadata
+      properties:
+        mintable:
+          type: boolean
+          example: true
+        total_supply:
+          type: string
+          example: 311500000000000
+        metadata:
+          example: {}
+    Jetton:
+      type: object
+      required:
+        - address
+        - name
+        - symbol
+        - decimal
+      properties:
+        address:
+          type: string
+          example: 0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0
+        name:
+          type: string
+          example: Wrapped TON
+        symbol:
+          type: string
+          example: WTON
+        decimal:
+          type: integer
+          example: 9
+        image:
+          type: string
+          example: "https://cache.tonapi.io/images/jetton.jpg"
+    JettonSimpleTransfer:
+      type: object
+      required:
+        - type
+        - amount
+        - jetton
+      properties:
+        type:
+          type: string
+          example: income
+          enum:
+            - income
+            - outcome
+        amount:
+          type: string
+          example: 100500
+        jetton:
+          $ref: '#/components/schemas/Jetton'
+    JettonHistory:
+      type: object
+      required:
+        - history
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/JettonSimpleTransfer'
+    AccountEvent:
+      type: object
+      required:
+        - event_id
+        - timestamp
+        - actions
+        - fee
+        - account
+        - is_scam
+        - lt
+        - in_progress
+      properties:
+        event_id:
+          type: string
+          example: e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e
+        account:
+          $ref: '#/components/schemas/AccountAddress'
+        timestamp:
+          type: integer
+          format: int64
+          example: 1234567890
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+        fee:
+          $ref: '#/components/schemas/Fee'
+        is_scam:
+          type: boolean
+          description: scam
+          example: false
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        in_progress:
+          type: boolean
+          example: false
+          description: Event is not finished yet. Transactions still happening
+    Event:
+      type: object
+      required:
+        - event_id
+        - timestamp
+        - actions
+        - fees
+        - is_scam
+        - lt
+        - in_progress
+      properties:
+        event_id:
+          type: string
+          example: e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e
+        timestamp:
+          type: integer
+          format: int64
+          example: 1234567890
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fee'
+        is_scam:
+          type: boolean
+          description: scam
+          example: false
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        in_progress:
+          type: boolean
+          example: false
+          description: Event is not finished yet. Transactions still happening
+    Action:
+      type: object
+      required:
+        - type
+        - status
+      properties:
+        type:
+          type: string
+          example: "TonTransfer"
+          enum:
+            - TonTransfer
+            - JettonTransfer
+            - NftItemTransfer
+            - ContractDeploy
+            - Subscribe
+            - UnSubscribe
+            - Unknown
+        status:
+          type: string
+          example: "ok"
+          enum:
+            - ok
+            - failed
+            - pending
+        TonTransfer:
+          $ref: '#/components/schemas/TonTransferAction'
+        ContractDeploy:
+          $ref: '#/components/schemas/ContractDeployAction'
+        JettonTransfer:
+          $ref: '#/components/schemas/JettonTransferAction'
+        NftItemTransfer:
+          $ref: '#/components/schemas/NftItemTransferAction'
+        Subscribe:
+          $ref: '#/components/schemas/SubscriptionAction'
+        UnSubscribe:
+          $ref: '#/components/schemas/UnSubscriptionAction'
+    TonTransferAction:
+      type: object
+      required:
+        - sender
+        - recipient
+        - amount
+      properties:
+        sender:
+          $ref: '#/components/schemas/AccountAddress'
+        recipient:
+          $ref: '#/components/schemas/AccountAddress'
+        amount:
+          type: integer
+          description: amount in nanotons
+          format: int64
+          example: 123456789
+        comment:
+          type: string
+          example: "Hi! This is your salary. \nFrom accounting with love."
+        payload:
+          type: string
+          description: raw hex encoded payload
+          example: '0234de3e21d21b3ee21f3'
+    NftItemTransferAction:
+      type: object
+      required:
+        - nft
+      properties:
+        sender:
+          $ref: '#/components/schemas/AccountAddress'
+        recipient:
+          $ref: '#/components/schemas/AccountAddress'
+        nft:
+          type: string
+          example: ""
+        comment:
+          type: string
+          example: "Hi! This is your salary. \nFrom accounting with love."
+        payload:
+          type: string
+          description: raw hex encoded payload
+          example: '0234de3e21d21b3ee21f3'
+    JettonTransferAction:
+      type: object
+      required:
+        - amount
+        - jetton
+        - senders_wallet
+        - recipients_wallet
+      properties:
+        sender:
+          $ref: '#/components/schemas/AccountAddress'
+        recipient:
+          $ref: '#/components/schemas/AccountAddress'
+        senders_wallet:
+          type: string
+          example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+        recipients_wallet:
+          type: string
+          example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+        amount:
+          type: string
+          description: amount in quanta of tokens
+          example: 1000000000
+        comment:
+          type: string
+          example: "Hi! This is your salary. \nFrom accounting with love."
+        jetton:
+          $ref: '#/components/schemas/Jetton'
+    ContractDeployAction:
+      type: object
+      required:
+        - address
+        - deployer
+        - interfaces
+      properties:
+        address:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+        deployer:
+          $ref: '#/components/schemas/AccountAddress'
+        interfaces:
+          type: array
+          items:
+            type: string
+          example: ["nft_item", "nft_royalty"]
+    SubscriptionAction:
+      type: object
+      required:
+        - subscriber
+        - subscription
+        - beneficiary
+        - amount
+        - initial
+      properties:
+        subscriber:
+          $ref: '#/components/schemas/AccountAddress'
+        subscription:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+        beneficiary:
+          $ref: '#/components/schemas/AccountAddress'
+        amount:
+          type: integer
+          format: int64
+          example: 1000000000
+        initial:
+          type: boolean
+          example: false
+    UnSubscriptionAction:
+      type: object
+      required:
+        - subscriber
+        - subscription
+        - beneficiary
+      properties:
+        subscriber:
+          $ref: '#/components/schemas/AccountAddress'
+        subscription:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+        beneficiary:
+          $ref: '#/components/schemas/AccountAddress'
+    Fee:
+      type: object
+      required:
+        - account
+        - total
+        - gas
+        - rent
+        - deposit
+        - refund
+      properties:
+        account:
+          $ref: '#/components/schemas/AccountAddress'
+        total:
+          type: integer
+          format: int64
+          example: 100
+          description: "gas + rent + deposit - refund"
+        gas:
+          type: integer
+          format: int64
+          example: 80
+        rent:
+          type: integer
+          format: int64
+          example: 10
+        deposit:
+          type: integer
+          format: int64
+          example: 110
+        refund:
+          type: integer
+          format: int64
+          example: 100
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Something went wrong on server side
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Something went wrong on client side
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  securitySchemes:
+    JWTAuth:
+      description: "JWT token authorization"
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
