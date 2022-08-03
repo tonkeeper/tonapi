@@ -1362,8 +1362,21 @@ components:
         owner:
           $ref: '#/components/schemas/AccountAddress'
         collection_address:
+          deprecated: true
           type: string
-          example: 0:4EE035F09C23A15F2AA3ACC58D13FD27B9A0ED265238B654DEF38F851F0A291F
+          description: deprecated
+        collection:
+          type: object
+          required:
+            - address
+            - name
+          properties:
+            address:
+              type: string
+              example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+            name:
+              type: string
+              example: TON Diamonds
         verified:
           type: boolean
           example: true
@@ -1375,6 +1388,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ImagePreview'
+        dns:
+          type: string
+          example: crypto.ton
     NftItems:
       type: object
       required:
