@@ -7,7 +7,14 @@ You may also check [Tonkeeper documentation](https://github.com/tonkeeper/ton-co
 
 It is recommended to subscribe our [Telegram channel](https://t.me/tonapi_announcements) for announcements.
 
+# Report a problem
+
+In case of any problems with API or explorer, please submit an issue on github:
+https://github.com/tonkeeper/tonapi/issues
+
+
 # Registering your API key
+
 At the moment you need special key to be able to use TonAPI, otherwise you requests will be limited.
 
 To obtain special key which we call **serverSideKey** or **clientSideKey** in this doc - you need to use telegram bot https://t.me/tonapi_bot
