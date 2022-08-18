@@ -808,9 +808,66 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalError'
-
+  /v1/dns/resolve:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: DNS resolve for domain name
+      operationId: dnsResolve
+      tags:
+        - DNS
+      parameters:
+        - $ref: '#/components/parameters/domainNameParameter'
+      responses:
+        '200':
+          description: "dns record"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnsRecord'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/dns/getInfo:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: domain info
+      operationId: getDomainInfo
+      tags:
+        - DNS
+      parameters:
+        - $ref: '#/components/parameters/domainNameParameter'
+      responses:
+        '200':
+          description: "domain info"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainInfo'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
+    domainNameParameter:
+      in: query
+      name: name
+      required: true
+      description: "domain name with .ton"
+      schema:
+        type: string
+        example: wallet.ton
     accountAddressParameter:
       in: query
       name: account
@@ -1190,7 +1247,6 @@ components:
       required:
         - name
         - data
-        - address
       properties:
         name:
           type: string
@@ -1198,9 +1254,6 @@ components:
         data:
           description: annotation data struct
           example: {}
-        address:
-          $ref: '#/components/schemas/AccountAddress'
-
     TraceMsg:
       type: object
       required:
@@ -1495,8 +1548,7 @@ components:
         wallet_address:
           $ref: '#/components/schemas/AccountAddress'
         metadata:
-          type: object
-          example: {}
+          $ref: '#/components/schemas/Jetton'
     JettonsBalances:
       type: object
       required:
@@ -1520,7 +1572,7 @@ components:
           type: string
           example: 311500000000000
         metadata:
-          example: {}
+          $ref: '#/components/schemas/JettonMetadata'
     Jetton:
       type: object
       required:
@@ -1544,6 +1596,32 @@ components:
         image:
           type: string
           example: "https://cache.tonapi.io/images/jetton.jpg"
+    JettonMetadata:
+      type: object
+      required:
+        - address
+        - name
+        - symbol
+        - decimal
+      properties:
+        address:
+          type: string
+          example: 0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0
+        name:
+          type: string
+          example: Wrapped TON
+        symbol:
+          type: string
+          example: WTON
+        decimal:
+          type: integer
+          example: 9
+        image:
+          type: string
+          example: "https://cache.tonapi.io/images/jetton.jpg"
+        description:
+          type: string
+          example: Wrapped Toncoin
     JettonSimpleTransfer:
       type: object
       required:
@@ -1840,6 +1918,122 @@ components:
           type: integer
           format: int64
           example: 100
+    AnnotatedTrace:
+      type: object
+      required:
+        - hash
+        - lt
+        - account
+        - success
+        - fee
+        - other_fee
+        - storage_fee
+        - input_value
+        - interfaces
+        - annotations
+        - children
+      properties:
+        hash:
+          type: string
+          example: "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122"
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+        account:
+          $ref: '#/components/schemas/AccountAddress'
+        success:
+          type: boolean
+          example: true
+        fee:
+          type: integer
+          format: int64
+          example: 5681002
+        other_fee:
+          type: integer
+          format: int64
+          example: 5681000
+        storage_fee:
+          type: integer
+          format: int64
+          example: 200
+        input_value:
+          type: integer
+          format: int64
+          example: 2000000
+        interfaces:
+          type: array
+          items:
+            type: string
+            example: nft_sale
+        annotations:
+          type: array
+          items:
+            $ref: '#/components/schemas/TxAnnotation'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotatedTrace'
+    DnsRecord:
+      type: object
+      required:
+        - site
+      properties:
+        wallet:
+          $ref: '#/components/schemas/WalletDNS'
+        next_resolver:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+        site:
+          type: array
+          items:
+            type: string
+            example: "http://12234.ton"
+    WalletDNS:
+      type: object
+      required:
+        - address
+        - is_wallet
+        - has_method_pubkey
+        - has_method_seqno
+        - names
+      properties:
+        address:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+        is_wallet:
+          type: boolean
+          example: true
+        has_method_pubkey:
+          type: boolean
+          example: true
+        has_method_seqno:
+          type: boolean
+          example: true
+        names:
+          type: array
+          items:
+            type: string
+            example: "name"
+    DomainInfo:
+      type: object
+      required:
+        - expiration
+      properties:
+        nft_item:
+          type: object
+          required:
+            - address
+          properties:
+            address:
+              type: string
+              example: 0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B
+            owner:
+              $ref: '#/components/schemas/AccountAddress'
+        expiration:
+          type: integer
+          format: int64
+          example: 1660050553
   responses:
     NotFound:
       description: The specified resource was not found
