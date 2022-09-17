@@ -179,13 +179,7 @@ paths:
       tags:
         - Wallet
       parameters:
-        - name: public_key
-          in: query
-          required: true
-          description: "public key in hex (without 0x) format"
-          schema:
-            type: string
-            example: 55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122
+        - $ref: '#/components/parameters/publicKeyParameter'
       responses:
         '200':
           description: "wallets"
@@ -858,6 +852,135 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/offchain/putWalletConfig:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Send backup file to storage
+      operationId: putWalletConfig
+      tags:
+        - Backup
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: "TL-scheme: backup.send primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 payload:bytes sign:int512 = backup.Send"
+      responses:
+        '200':
+          description: "success"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/offchain/deleteWalletConfig:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Delete backup from storage
+      operationId: deleteWalletConfig
+      tags:
+        - Backup
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: "TL-scheme: backup.delete primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 sign:int512 = backup.Delete"
+      responses:
+        '200':
+          description: "success"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/offchain/getWalletConfig:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get backup from storage
+      operationId: getWalletConfig
+      tags:
+        - Backup
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: "TL-scheme: backup.get primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 sign:int512 = backup.Get"
+      responses:
+        '200':
+          description: "backup file"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: "TL-scheme: backup.getResponse payload:bytes = backup.GetResponse"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auction/getCurrent:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get all auctions
+      operationId: getAllAuctions
+      tags:
+        - Auctions
+      responses:
+        '200':
+          description: "auctions"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auctions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auction/getBids:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get domain bids
+      operationId: getDomainBids
+      tags:
+        - DomainBids
+      parameters:
+        - $ref: '#/components/parameters/domainBidsParameters'
+      responses:
+        '200':
+          description: "domain bids"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainBids'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
     domainNameParameter:
@@ -876,6 +999,22 @@ components:
       schema:
         type: string
         example: 0:BA60BFBD527C0CD2D70C6396630C50A498AF015B987ADAAD1D4A9E287F604536
+    domainBidsParameters:
+      in: query
+      name: domain
+      required: true
+      description: "domain names with .ton"
+      schema:
+        type: string
+        example: wallet.ton
+    publicKeyParameter:
+      in: query
+      name: public_key
+      required: true
+      description: "public key in hex (without 0x) format"
+      schema:
+        type: string
+        example: 6DDD647FD1D4A79C83E0149DFF9EB26A3EBF2DB6517A4F79E43098912E6A6802
   requestBodies:
     Boc:
       description: "bag-of-cells serialized to base64"
@@ -942,9 +1081,8 @@ components:
           type: string
           example: A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB
         shard:
-          type: integer
-          format: int64
-          example: -9223372036854775808
+          type: string
+          example: 8000000000000000
         start_lt:
           type: integer
           format: int64
@@ -2034,6 +2172,74 @@ components:
           type: integer
           format: int64
           example: 1660050553
+    Auctions:
+      type: object
+      required:
+       - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Auction'
+    Auction:
+      type: object
+      required:
+       - domain
+       - owner
+       - price
+       - bids
+       - date
+      properties:
+        domain:
+          type: string
+          example: wallet.ton
+        owner:
+          type: string
+          example: owner
+        price:
+          type: integer
+          format: int64
+          example: 1660050553
+        bids:
+          type: integer
+          format: int64
+          example: 1660050553
+        date:
+          type: integer
+          format: int64
+          example: 1660050553
+    DomainBids:
+      type: object
+      required:
+       - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainBid'
+    DomainBid:
+      type: object
+      required:
+        - success
+        - value
+        - txTime
+        - bidderA
+      properties:
+        success:
+          type: boolean
+          example: true
+          default: false
+        value:
+          type: integer
+          format: uint64
+          example: 1660050553
+        txTime:
+          type: integer
+          format: int64
+          example: 1660050553
+        bidderA:
+          type: string
+          example: bidderA
   responses:
     NotFound:
       description: The specified resource was not found
