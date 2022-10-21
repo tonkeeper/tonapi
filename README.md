@@ -164,7 +164,7 @@ https://github.com/tonkeeper/ton-connect/blob/main/tonconnect-server/src/TonConn
 ## OAuth demo
 Check out simple demo of Authroisation flow:
 
-[View Demo](https://beta.stickerface.io/tonapi-oauth-demo/)
+[View Demo](https://auth.tonapi.io/)
 
 ***
 ```javascript
