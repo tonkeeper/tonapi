@@ -609,7 +609,7 @@ paths:
     get:
       security:
         - JWTAuth: [ "common" ]
-#          todo: remove or stabilize
+      #          todo: remove or stabilize
       description: Get all Jetton transfers for account. EXPERIMENTAL METHOD!!!
       operationId: getJettonHistory
       tags:
@@ -698,7 +698,7 @@ paths:
           content:
             application/json:
               schema:
-                 $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/Event'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1219,7 +1219,7 @@ components:
         source:
           $ref: '#/components/schemas/AccountAddress'
         msg_data:
-          example: {}
+          example: { }
     Trace:
       type: object
       required:
@@ -1253,7 +1253,7 @@ components:
           example: nft_transfer
         data:
           description: annotation data struct
-          example: {}
+          example: { }
     TraceMsg:
       type: object
       required:
@@ -1356,7 +1356,7 @@ components:
           type: string
           example: 697066733a2f2f516d596e437861746f5178433571584b79773971656768415853626f3544644e6a32387631487669437a47355359
         metadata:
-          example: {}
+          example: { }
     NftCollections:
       type: object
       required:
@@ -1397,7 +1397,7 @@ components:
           type: boolean
           example: true
         metadata:
-          example: {}
+          example: { }
     NftItemRepr:
       type: object
       required:
@@ -1434,7 +1434,7 @@ components:
           type: boolean
           example: true
         metadata:
-          example: {}
+          example: { }
         sale:
           $ref: '#/components/schemas/Sale'
         previews:
@@ -1847,7 +1847,7 @@ components:
           type: array
           items:
             type: string
-          example: ["nft_item", "nft_royalty"]
+          example: [ "nft_item", "nft_royalty" ]
     SubscriptionAction:
       type: object
       required:

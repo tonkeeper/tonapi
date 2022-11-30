@@ -1,0 +1,377 @@
+openapi: 3.0.1
+
+info:
+  title: REST api to pusher
+  version: 0.0.1
+  contact:
+    name: Support
+    email: contact@fslabs.org
+
+servers:
+  - url: "https://tonapi.io"
+  - url: "http://localhost:8081"
+
+paths:
+  /v1/stream/sse/test/event:
+    get:
+      description: Test new_transaction event
+      operationId: getNewTransactionTestEvent
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "New transaction"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NewTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/account:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get new transactions from accounts
+      operationId: getNewTransactionEvent
+      parameters:
+        - $ref: '#/components/parameters/accountsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "Account has new transaction"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NewTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/jetton_transfer:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get check jetton transfer
+      operationId: getJettonTransferEvent
+      parameters:
+        - $ref: '#/components/parameters/jettonsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "Jetton has been transfer"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/JettonTransfer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/nft_transfer:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get check nft transfer
+      operationId: getNFTTransferEvent
+      parameters:
+        - $ref: '#/components/parameters/nftsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "NFT has been transfer"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NFTTransfer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  
+  /v1/push/subscribe:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Subscribe to the push
+      operationId: subscribePush
+      requestBody:
+        $ref: "#/components/requestBodies/subscribe"
+      tags:
+        - push
+      responses:
+        '200':
+          description: "Ok"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/push/unsubscribe:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Unsubscribe to the push
+      operationId: unsubscribePush
+      requestBody:
+        $ref: "#/components/requestBodies/unsubscribe"
+      tags:
+        - push
+      responses:
+        '200':
+          description: "Ok"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/ws/account:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: ws to check new transactions from account
+      operationId: wsAccount
+      tags:
+        - ws
+      responses:
+        200:
+          description: ""
+
+components:
+  parameters:
+    accountsParameter:
+      in: query
+      name: accounts
+      required: true
+      description: "accounts for check new transactions (separate by comma) or use 'all' for subscribe to all accounts"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
+        enum:
+          - all
+    nftsParameter:
+      in: query
+      name: nfts
+      required: true
+      description: "nfts for check transfer (separate by comma)"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
+    jettonsParameter:
+      in: query
+      name: jettons
+      required: true
+      description: "jettons for check transfer (separate by comma)"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
+  
+  requestBodies:
+    unsubscribe:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - device
+            properties:
+              device:
+                type: string
+    subscribe:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - device
+            properties:
+              device:
+                type: string
+              token:
+                type: string
+              locale:
+                type: string
+              accounts:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - address
+                  properties:
+                    address:
+                      type: string
+    rpc:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 1
+              jsonrpc:
+                type: string
+                example: "2.0"
+              method:
+                type: string
+                enum:
+                  - subscribe_account
+                  - unsubscribe_account
+              params:
+                type: array
+                items:
+                  type: string
+                  example: "EQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay-7l"
+  
+  schemas:
+    NewTransactionEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - hash_transaction
+        - account
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "new_transaction"
+          enum:
+            - new_transaction
+        hash_transaction:
+          type: string
+          example: "cf3b91ec333f50e1629b0d6eb448c50bf7539ee9a3bf9cce33fb2c2c6ef22370"
+        account:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+    JettonTransferEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - recipient_address
+        - amount
+        - jetton_address
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "jetton_transfer"
+          enum:
+            - jetton_transfer
+        recipient_address:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+        amount:
+          type: string
+          example: "20"
+        jetton_address:
+          type: string
+          example: "0:6553FB4A2128297A978C153F6DDF14C37A2566A36E5D5BFE2F50E97A8C877F04"
+    NFTTransferEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - new_owner
+        - nft_address
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "new_transaction"
+          enum:
+            - new_transaction
+        new_owner:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+        nft_address:
+          type: string
+          example: "0:FD595F36B4C1535BEC8461490D38EBB9AE3C38DD6ACE17CA63ABE2C6608BE159"
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: error description
+    Ok:
+      type: object
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          example: true
+  
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Something went wrong on server side
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Something went wrong on client side
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  
+  securitySchemes:
+    JWTAuth:
+      description: "JWT token authorization"
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
