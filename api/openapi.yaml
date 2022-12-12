@@ -88,6 +88,29 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/blockchain/validators:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get validators info list 
+      operationId: getValidators
+      tags:
+        - RawBlockchain
+      responses:
+        '200':
+          description: "validators info list from blockchain"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validators'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/blockchain/getTransaction:
     get:
       security:
@@ -193,6 +216,29 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/wallet/getWalletPublicKey:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get public key by wallet address
+      operationId: getWalletPublicKey
+      tags:
+        - Wallet
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "publicKey"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKey'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalError'
   /v1/subscription/getByWallet:
@@ -320,6 +366,22 @@ paths:
       operationId: getNftCollections
       tags:
         - NFT
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
+            maximum: 25
+            default: 15
+            example: 15
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            example: 10
       responses:
         '200':
           description: "nft collections"
@@ -603,20 +665,33 @@ paths:
     get:
       security:
         - JWTAuth: [ "common" ]
-#          todo: remove or stabilize
-      description: Get all Jetton transfers for account. EXPERIMENTAL METHOD!!!
+      description: Get all Jetton transfers for account
       operationId: getJettonHistory
       tags:
         - Jetton
       parameters:
         - $ref: '#/components/parameters/accountAddressParameter'
+        - in: query
+          name: jetton_master
+          required: false
+          description: "address in raw (hex without 0x) or base64url format"
+          schema:
+            type: string
+            example: 0:BA60BFBD527C0CD2D70C6396630C50A498AF015B987ADAAD1D4A9E287F604536
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 1000
+            maximum: 1000
       responses:
         '200':
           description: "history"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JettonHistory'
+                $ref: '#/components/schemas/AccountEvents'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -647,7 +722,21 @@ paths:
           schema:
             type: integer
             example: 1000
-            maximum: 1000
+            maximum: 1000        
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 1668436763
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 1668436763
       responses:
         '200':
           description: "events"
@@ -662,6 +751,10 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/AccountEvent'
+                  next_from:
+                    type: integer
+                    format: int64
+                    example: 23814011000000
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -692,7 +785,7 @@ paths:
           content:
             application/json:
               schema:
-                 $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/Event'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -827,6 +920,31 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/dns/backresolve:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: DNS back resolve for wallet address
+      operationId: dnsBackResolve
+      tags:
+        - DNS
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "domains for wallet"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainNames'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/dns/getInfo:
     get:
       security:
@@ -867,7 +985,9 @@ paths:
             schema:
               type: string
               format: binary
-              description: "TL-scheme: backup.send primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 payload:bytes sign:int512 = backup.Send"
+              description: |
+                "TL-scheme: backup.send sign:int512 primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 payload:bytes = backup.Send" \
+                "TL-scheme: backup.voucher sign:int512 expire_at:int64 publicKey:int256 = backup.Voucher"
       responses:
         '200':
           description: "success"
@@ -892,7 +1012,9 @@ paths:
             schema:
               type: string
               format: binary
-              description: "TL-scheme: backup.delete primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 sign:int512 = backup.Delete"
+              description: |
+                "TL-scheme: backup.delete sign:int512 primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 = backup.Delete" \
+                "TL-scheme: backup.voucher sign:int512 expire_at:int64 publicKey:int256 = backup.Voucher"
       responses:
         '200':
           description: "success"
@@ -919,7 +1041,9 @@ paths:
             schema:
               type: string
               format: binary
-              description: "TL-scheme: backup.get primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 sign:int512 = backup.Get"
+              description: |
+                "TL-scheme: backup.get sign:int512 primaryPublicKey:int256 voucher:backup.Voucher request_expire:int64 = backup.Get" \
+                "TL-scheme: backup.voucher sign:int512 expire_at:int64 publicKey:int256 = backup.Voucher"
       responses:
         '200':
           description: "backup file"
@@ -944,7 +1068,9 @@ paths:
       description: Get all auctions
       operationId: getAllAuctions
       tags:
-        - Auctions
+        - Domain Auctions
+      parameters:
+        - $ref: '#/components/parameters/domainFilterParameters'
       responses:
         '200':
           description: "auctions"
@@ -965,7 +1091,7 @@ paths:
       description: Get domain bids
       operationId: getDomainBids
       tags:
-        - DomainBids
+        - Domain Auctions
       parameters:
         - $ref: '#/components/parameters/domainBidsParameters'
       responses:
@@ -981,13 +1107,162 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/wallet/getSeqno:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get last seqno for wallet
+      operationId: getWalletSeqno
+      tags:
+        - Wallet
+      parameters:
+        - $ref: '#/components/parameters/accountAddressParameter'
+      responses:
+        '200':
+          description: "nft items"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Seqno'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/dns/domains/search:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Search domains by the first letters
+      operationId: searchDomains
+      tags:
+        - DNS
+      parameters:
+        - name: domain
+          in: query
+          required: true
+          schema:
+              type: string
+              example: wallet.ton
+      responses:
+        '200':
+          description: "domains"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainNames'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/test/event:
+    get:
+      description: Test new_transaction event
+      operationId: getNewTransactionTestEvent
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "New transaction"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NewTransactionEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/account:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get new transactions from accounts
+      operationId: getNewTransactionEvent
+      parameters:
+        - $ref: '#/components/parameters/accountsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "Account has new transaction"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NewTransactionEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/jetton_transfer:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get check jetton transfer
+      operationId: getJettonTransferEvent
+      parameters:
+        - $ref: '#/components/parameters/jettonsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "Jetton has been transfer"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/JettonTransferEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/stream/sse/nft_transfer:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get check nft transfer
+      operationId: getNFTTransferEvent
+      parameters:
+        - $ref: '#/components/parameters/nftsParameter'
+      tags:
+        - sse
+      responses:
+        '200':
+          description: "NFT has been transfer"
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/NFTTransferEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
     domainNameParameter:
       in: query
       name: name
       required: true
-      description: "domain name with .ton"
+      description: "domain name with .ton or .t.me"
       schema:
         type: string
         example: wallet.ton
@@ -1007,6 +1282,14 @@ components:
       schema:
         type: string
         example: wallet.ton
+    domainFilterParameters:
+      in: query
+      name: tld
+      required: false
+      description: "domain filter for current auctions \"ton\" or \"t.me\""
+      schema:
+        type: string
+        example: ton
     publicKeyParameter:
       in: query
       name: public_key
@@ -1015,6 +1298,32 @@ components:
       schema:
         type: string
         example: 6DDD647FD1D4A79C83E0149DFF9EB26A3EBF2DB6517A4F79E43098912E6A6802
+    accountsParameter:
+      in: query
+      name: accounts
+      required: true
+      description: "accounts for check new transactions (separate by comma) or use 'all' for subscribe to all accounts"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
+        enum:
+          - all
+    nftsParameter:
+      in: query
+      name: nfts
+      required: true
+      description: "nfts for check transfer (separate by comma)"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
+    jettonsParameter:
+      in: query
+      name: jettons
+      required: true
+      description: "jettons for check transfer (separate by comma)"
+      schema:
+        type: string
+        example: 0:a6830e9a3453771efeb588cfb33216a6b102438fa25d1349d5976d4514b5d693,
   requestBodies:
     Boc:
       description: "bag-of-cells serialized to base64"
@@ -1029,6 +1338,14 @@ components:
                 type: string
                 example: "a2Fza2RqZ2xrZHNqZ2xrZ2RzamFnbGtoc2Fka2poZ2pzaGQsamduc2pnbi5qYmZz"
   schemas:
+    Ok:
+      type: object
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          example: true
     Error:
       type: object
       required:
@@ -1206,6 +1523,58 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Wallet'
+    Validator:
+      type: object
+      required:
+        - address
+        - adnlAddress
+        - stake
+        - maxFactor
+      properties:
+        address:
+          type: string
+          example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+        adnlAddress:
+          type: string
+          example: 10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+        stake:
+          type: integer
+          format: int64
+          example: 123456789
+        maxFactor:
+          type: integer
+          format: int64
+          example: 123456789
+        
+    Validators:
+      type: object
+      required:
+        - electAt
+        - electClose
+        - minStake
+        - totalStake
+        - validators
+      properties:
+        electAt:
+          type: integer
+          format: int64
+          example: 123456789
+        electClose:
+          type: integer
+          format: int64
+          example: 123456789
+        minStake:
+          type: integer
+          format: int64
+          example: 123456789
+        totalStake:
+          type: integer
+          format: int64
+          example: 123456789
+        validators:
+          type: array
+          items:
+            $ref: '#/components/schemas/Validator'
     Subscription:
       type: object
       required:
@@ -1357,7 +1726,7 @@ components:
         source:
           $ref: '#/components/schemas/AccountAddress'
         msg_data:
-          example: {}
+          example: { }
     Trace:
       type: object
       required:
@@ -1391,7 +1760,7 @@ components:
           example: nft_transfer
         data:
           description: annotation data struct
-          example: {}
+          example: { }
     TraceMsg:
       type: object
       required:
@@ -1494,7 +1863,7 @@ components:
           type: string
           example: 697066733a2f2f516d596e437861746f5178433571584b79773971656768415853626f3544644e6a32387631487669437a47355359
         metadata:
-          example: {}
+          example: { }
     NftCollections:
       type: object
       required:
@@ -1535,13 +1904,15 @@ components:
           type: boolean
           example: true
         metadata:
-          example: {}
+          example: { }
     NftItemRepr:
       type: object
       required:
         - address
         - index
         - verified
+        - metadata
+        - approved_by
       properties:
         address:
           type: string
@@ -1572,7 +1943,7 @@ components:
           type: boolean
           example: true
         metadata:
-          example: {}
+          example: { }
         sale:
           $ref: '#/components/schemas/Sale'
         previews:
@@ -1582,6 +1953,11 @@ components:
         dns:
           type: string
           example: crypto.ton
+        approved_by:
+          type: array
+          items:
+            type: string
+            example: GetGems
     NftItems:
       type: object
       required:
@@ -1717,7 +2093,7 @@ components:
         - address
         - name
         - symbol
-        - decimal
+        - decimals
       properties:
         address:
           type: string
@@ -1728,7 +2104,7 @@ components:
         symbol:
           type: string
           example: WTON
-        decimal:
+        decimals:
           type: integer
           example: 9
         image:
@@ -1740,7 +2116,7 @@ components:
         - address
         - name
         - symbol
-        - decimal
+        - decimals
       properties:
         address:
           type: string
@@ -1751,7 +2127,7 @@ components:
         symbol:
           type: string
           example: WTON
-        decimal:
+        decimals:
           type: integer
           example: 9
         image:
@@ -1760,6 +2136,21 @@ components:
         description:
           type: string
           example: Wrapped Toncoin
+        social:
+          type: array
+          items:
+            type: string
+            example: [ "https://t.me/durov_coin", "https://twitter.com/durov_coin" ]
+        websites:
+          type: array
+          items:
+            type: string
+            example: [ "https://durov.coin", "ton://durov-coin.ton" ]
+        catalogs:
+          type: array
+          items:
+            type: string
+            example: [ "https://coinmarketcap.com/currencies/drv/", "https://www.coingecko.com/en/coins/durov" ]
     JettonSimpleTransfer:
       type: object
       required:
@@ -1778,15 +2169,19 @@ components:
           example: 100500
         jetton:
           $ref: '#/components/schemas/Jetton'
-    JettonHistory:
+    AccountEvents:
       type: object
       required:
-        - history
+        - events
       properties:
-        history:
+        events:
           type: array
           items:
-            $ref: '#/components/schemas/JettonSimpleTransfer'
+            $ref: '#/components/schemas/AccountEvent'
+        next_from:
+          type: integer
+          format: int64
+          example: 25713146000001
     AccountEvent:
       type: object
       required:
@@ -1869,6 +2264,7 @@ components:
       required:
         - type
         - status
+        - simple_preview
       properties:
         type:
           type: string
@@ -1880,6 +2276,8 @@ components:
             - ContractDeploy
             - Subscribe
             - UnSubscribe
+            - AuctionBid
+            - NftPurchase
             - Unknown
         status:
           type: string
@@ -1900,6 +2298,12 @@ components:
           $ref: '#/components/schemas/SubscriptionAction'
         UnSubscribe:
           $ref: '#/components/schemas/UnSubscriptionAction'
+        AuctionBid:
+          $ref: '#/components/schemas/AuctionBidAction'
+        NftPurchase:
+          $ref: '#/components/schemas/NftPurchase'
+        simple_preview:
+          $ref: '#/components/schemas/ActionSimplePreview'
     TonTransferAction:
       type: object
       required:
@@ -1923,6 +2327,8 @@ components:
           type: string
           description: raw hex encoded payload
           example: '0234de3e21d21b3ee21f3'
+        refund:
+          $ref: '#/components/schemas/Refund'
     NftItemTransferAction:
       type: object
       required:
@@ -1942,6 +2348,8 @@ components:
           type: string
           description: raw hex encoded payload
           example: '0234de3e21d21b3ee21f3'
+        refund:
+          $ref: '#/components/schemas/Refund'
     JettonTransferAction:
       type: object
       required:
@@ -1967,6 +2375,8 @@ components:
         comment:
           type: string
           example: "Hi! This is your salary. \nFrom accounting with love."
+        refund:
+          $ref: '#/components/schemas/Refund'
         jetton:
           $ref: '#/components/schemas/Jetton'
     ContractDeployAction:
@@ -1985,7 +2395,7 @@ components:
           type: array
           items:
             type: string
-          example: ["nft_item", "nft_royalty"]
+          example: [ "nft_item", "nft_royalty" ]
     SubscriptionAction:
       type: object
       required:
@@ -2023,6 +2433,69 @@ components:
           example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
         beneficiary:
           $ref: '#/components/schemas/AccountAddress'
+    AuctionBidAction:
+      type: object
+      required:
+        - amount
+        - beneficiary
+        - bidder
+        - auction_type
+      properties:
+        auction_type:
+          type: string
+          enum:
+            - DNS.ton
+            - DNS.tg
+            - getgems
+        amount:
+          $ref: '#/components/schemas/Price'
+        nft:
+          $ref: '#/components/schemas/NftItemRepr'
+        beneficiary:
+          $ref: '#/components/schemas/AccountAddress'
+        bidder:
+          $ref: '#/components/schemas/AccountAddress'
+    NftPurchase:
+      type: object
+      required:
+        - amount
+        - seller
+        - buyer
+        - auction_type
+        - nft
+      properties:
+        purchase_type:
+          type: string
+          enum:
+            - DNS.tg
+            - getgems
+        amount:
+          $ref: '#/components/schemas/Price'
+        nft:
+          $ref: '#/components/schemas/NftItemRepr'
+        seller:
+          $ref: '#/components/schemas/AccountAddress'
+        buyer:
+          $ref: '#/components/schemas/AccountAddress'
+    ActionSimplePreview:
+      type: object
+      required:
+        - name
+        - short_description
+        - full_description
+      properties:
+        name:
+          type: string
+          example: "contract deploy"
+        short_description:
+          type: string
+          example: ""
+        full_description:
+          type: string
+          example: ""
+        image:
+          type: string
+          example: "https://site.com/pic1.jpg"
     Fee:
       type: object
       required:
@@ -2175,20 +2648,25 @@ components:
     Auctions:
       type: object
       required:
-       - data
+        - data
+        - total
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/Auction'
+        total:
+          type: integer
+          format: int64
+          example: 1660050553
     Auction:
       type: object
       required:
-       - domain
-       - owner
-       - price
-       - bids
-       - date
+        - domain
+        - owner
+        - price
+        - bids
+        - date
       properties:
         domain:
           type: string
@@ -2211,7 +2689,7 @@ components:
     DomainBids:
       type: object
       required:
-       - data
+        - data
       properties:
         data:
           type: array
@@ -2223,7 +2701,8 @@ components:
         - success
         - value
         - txTime
-        - bidderA
+        - bidder
+        - txHash
       properties:
         success:
           type: boolean
@@ -2237,9 +2716,128 @@ components:
           type: integer
           format: int64
           example: 1660050553
-        bidderA:
+        txHash:
           type: string
-          example: bidderA
+          example: "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122"
+        bidder:
+          $ref: '#/components/schemas/AccountAddress'
+    DomainNames:
+      type: object
+      required:
+        - domains
+      properties:
+        domains:
+          type: array
+          items:
+            type: string
+            example: "http://12234.ton"
+    Seqno:
+      type: object
+      required:
+        - seqno
+      properties:
+        seqno:
+          type: integer
+          format: int64
+          example: 123
+    PublicKey:
+      type: object
+      required:
+        - publicKey
+      properties:
+        publicKey:
+          type: string
+          format: binary
+          example: 6DDD647FD1D4A79C83E0149DFF9EB26A3EBF2DB6517A4F79E43098912E6A6802
+    Refund:
+      type: object
+      required:
+        - type
+        - origin
+      properties:
+        type:
+          type: string
+          example: DNS.ton
+          enum:
+            - DNS.ton
+            - DNS.tg
+            - GetGems
+        origin:
+          type: string
+          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+    NewTransactionEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - hash_transaction
+        - account
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "new_transaction"
+          enum:
+            - new_transaction
+        hash_transaction:
+          type: string
+          example: "cf3b91ec333f50e1629b0d6eb448c50bf7539ee9a3bf9cce33fb2c2c6ef22370"
+        account:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+    JettonTransferEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - recipient_address
+        - amount
+        - jetton_address
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "jetton_transfer"
+          enum:
+            - jetton_transfer
+        recipient_address:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+        amount:
+          type: string
+          example: "20"
+        jetton_address:
+          type: string
+          example: "0:6553FB4A2128297A978C153F6DDF14C37A2566A36E5D5BFE2F50E97A8C877F04"
+    NFTTransferEvent:
+      type: object
+      required:
+        - event_id
+        - event_name
+        - new_owner
+        - nft_address
+      properties:
+        event_id:
+          type: integer
+          format: int64
+          example: 1
+        event_name:
+          type: string
+          example: "new_transaction"
+          enum:
+            - new_transaction
+        new_owner:
+          type: string
+          example: "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+        nft_address:
+          type: string
+          example: "0:FD595F36B4C1535BEC8461490D38EBB9AE3C38DD6ACE17CA63ABE2C6608BE159"
   responses:
     NotFound:
       description: The specified resource was not found
