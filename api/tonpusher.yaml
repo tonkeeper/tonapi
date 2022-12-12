@@ -17,7 +17,7 @@ paths:
       description: Test new_transaction event
       operationId: getNewTransactionTestEvent
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "New transaction"
@@ -40,7 +40,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/accountsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "Account has new transaction"
@@ -65,7 +65,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/jettonsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "Jetton has been transfer"
@@ -90,7 +90,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/nftsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "NFT has been transfer"
@@ -116,7 +116,7 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/subscribe"
       tags:
-        - push
+        - Push
       responses:
         '200':
           description: "Ok"
@@ -141,7 +141,7 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/unsubscribe"
       tags:
-        - push
+        - Push
       responses:
         '200':
           description: "Ok"
@@ -164,7 +164,7 @@ paths:
       description: ws to check new transactions from account
       operationId: wsAccount
       tags:
-        - ws
+        - WS
       responses:
         200:
           description: ""
