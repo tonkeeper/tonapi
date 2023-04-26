@@ -665,7 +665,7 @@ paths:
     get:
       security:
         - JWTAuth: [ "common" ]
-      description: Get all Jetton transfers for account. EXPERIMENTAL METHOD!!!
+      description: Get all Jetton transfers for account
       operationId: getJettonHistory
       tags:
         - Jetton
@@ -1145,8 +1145,8 @@ paths:
           in: query
           required: true
           schema:
-              type: string
-              example: wallet.ton
+            type: string
+            example: wallet.ton
       responses:
         '200':
           description: "domains"
@@ -1167,7 +1167,7 @@ paths:
       description: Test new_transaction event
       operationId: getNewTransactionTestEvent
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "New transaction"
@@ -1190,7 +1190,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/accountsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "Account has new transaction"
@@ -1215,7 +1215,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/jettonsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "Jetton has been transfer"
@@ -1240,7 +1240,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/nftsParameter'
       tags:
-        - sse
+        - SSE
       responses:
         '200':
           description: "NFT has been transfer"
@@ -1248,6 +1248,91 @@ paths:
             text/event-stream:
               schema:
                 $ref: '#/components/schemas/NFTTransferEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/func/compile:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Analyze func code
+      operationId: putFuncFiles
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: string
+              format: binary
+      tags:
+        - Func analyzer
+      responses:
+        '201':
+          description: "Func analyze has been completed"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuncAnalyzeOK'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/compile/info/{id}:
+    get:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Get info from analyzer
+      operationId: getFuncAnalyzeInfo
+      parameters:
+        - description: Code ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      tags:
+        - Func analyzer
+      responses:
+        '200':
+          description: "Code info"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuncAnalyzeOK'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/boc/disassemble:
+    post:
+      security:
+        - JWTAuth: [ "common" ]
+      description: Disassemble code
+      operationId: disassembleCode
+      requestBody:
+        $ref: "#/components/requestBodies/Disassemble"
+      tags:
+        - Func analyzer
+      responses:
+        '200':
+          description: "Disassemble has been completed"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisassembleOK'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1337,6 +1422,16 @@ components:
               boc:
                 type: string
                 example: "a2Fza2RqZ2xrZHNqZ2xrZ2RzamFnbGtoc2Fka2poZ2pzaGQsamduc2pnbi5qYmZz"
+    Disassemble:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              base64:
+                type: string
+              hmac:
+                type: string
   schemas:
     Ok:
       type: object
@@ -1421,6 +1516,9 @@ components:
         code:
           type: string
           example: b5ee9c72410104010087000114ff00f4a413f4a0f2c80b0102012002030002d200dfa5ffff76a268698fe9ffe8e42c5267858f90e785ffe4f6aa6467c444ffb365ffc10802faf0807d014035e7a064b87d804077e7857fc10803dfd2407d014035e7a064b86467cd8903a32b9ba4410803ade68afd014035e7a045ea432b6363796103bb7b9363210c678b64b87d807d8040c249b3e4
+        code_hash:
+          type: string
+          example: 6f15bab4d8f45f6c3fb33e7a1eb206ecd36192c587602dc070ee7f134f263fe3
         data:
           type: string
           example: b5ee9c7241010101002600004811fd096c0000000000000000000000000000000000000000000000000000000000000000cb78264d
@@ -1545,7 +1643,7 @@ components:
           type: integer
           format: int64
           example: 123456789
-
+    
     Validators:
       type: object
       required:
@@ -2046,13 +2144,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NftForSale'
+    JettonVerificationType:
+      type: string
+      enum:
+        - whitelist
+        - blacklist
+        - none
     JettonBalance:
       type: object
       required:
         - balance
         - jetton_address
         - wallet_address
+        - verification
       properties:
+        verification:
+          $ref: '#/components/schemas/JettonVerificationType'
         balance:
           type: string
           example: 597968399
@@ -2078,6 +2185,7 @@ components:
         - mintable
         - total_supply
         - metadata
+        - verification
       properties:
         mintable:
           type: boolean
@@ -2087,6 +2195,8 @@ components:
           example: 311500000000000
         metadata:
           $ref: '#/components/schemas/JettonMetadata'
+        verification:
+          $ref: '#/components/schemas/JettonVerificationType'
     Jetton:
       type: object
       required:
@@ -2110,6 +2220,8 @@ components:
         image:
           type: string
           example: "https://cache.tonapi.io/images/jetton.jpg"
+        verification:
+          $ref: '#/components/schemas/JettonVerificationType'
     JettonMetadata:
       type: object
       required:
@@ -2446,6 +2558,7 @@ components:
           enum:
             - DNS.ton
             - DNS.tg
+            - NUMBER.tg
             - getgems
         amount:
           $ref: '#/components/schemas/Price'
@@ -2838,6 +2951,34 @@ components:
         nft_address:
           type: string
           example: "0:FD595F36B4C1535BEC8461490D38EBB9AE3C38DD6ACE17CA63ABE2C6608BE159"
+    FuncAnalyzeOK:
+      type: object
+      required:
+        - id
+        - boc
+        - fift
+        - date_create
+      properties:
+        id:
+          type: string
+          example: "648d1a29-ec5c-43e2-acdc-26174eead951"
+        boc:
+          type: string
+          example: "te6ccgEBBgEARAABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQAE8jAAONBsIdMfMO1E0NM/MAHAAZekyMs/ye1UkzDyBuIAEaE0MdqJoaZ+YQ=="
+        fift:
+          type: string
+          example: "// automatically generated from ...."
+        date_create:
+          type: integer
+          format: int64
+          example: 1671689239
+    DisassembleOK:
+      type: object
+      required:
+        - fift
+      properties:
+        fift:
+          type: string
   responses:
     NotFound:
       description: The specified resource was not found
